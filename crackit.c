@@ -10,21 +10,17 @@
 
 #define STARTS_LEFT 0
 
-#define GENERATE_NUM_CRACKS 5000
+#define GENERATE_NUM_CRACKS 500
 
-#define FILL_COLOR1r 0x22
-#define FILL_COLOR1g 0x22
-#define FILL_COLOR1b 0x22
-#define FILL_COLOR2r 0x11
-#define FILL_COLOR2g 0x11
-#define FILL_COLOR2b 0x11
 
-#define THICK_THRESH_2 60
-#define THICK_THRESH_3 90
+#define THICK_THRESH_2 30 //60
+#define THICK_THRESH_3 50 //90
 #define CRACK_COUNTDOWN 20
 #define BRANCH_COUNTDOWN 50
 #define HORIZONTAL_PERTURB 30
 #define VERTICAL_PERTURB 70
+
+#define INVERT_COLOR 0
 
 #define MINIMUM_CRACK_LEN 100
 
@@ -35,6 +31,13 @@
 #define RGB5(r, g, b) RGBA(r, g, b, 0xaa)
 
 #define ALPHA(c, a) ((c) | ((a) << 8))
+
+int FILL_COLOR1r= 0x22;
+int FILL_COLOR1g= 0x22;
+  int FILL_COLOR1b= 0x22;
+  int FILL_COLOR2r= 0x11;
+  int FILL_COLOR2g= 0x11;
+  int FILL_COLOR2b= 0x11;
 
 int x_ratio;
 int y_ratio;
@@ -81,26 +84,38 @@ float maxx, maxy;
 
 void change_bg_color(libattopng_t *png){
   int x, y;
-
+  int intensity1, intensity2, intensity3;
   BG_COLOR=rand()%10;
-
+  
+  
   for (y = 0; y < H; y++) {
       for (x = 0; x < W; x++) {
 	if (libattopng_get_pixel(png, x, y)==RGBA(0,0,0,0))   {
+
+	  if (INVERT_COLOR==0) {
+	    intensity1=rand()%128+128;
+	    intensity2=rand()%128+128;
+	    intensity3=rand()%128+128;
+	  } else {
+	    intensity1=rand()%128;
+	    intensity2=rand()%128;
+	    intensity3=rand()%128;	    
+	  }
+	  
 	  if (BG_COLOR == 0)
-	    libattopng_set_pixel(png, x, y, RGBA(255,0,0,255));
+	    libattopng_set_pixel(png, x, y, RGBA(intensity1,0,0,255));
 	  else if (BG_COLOR == 1)
-	    libattopng_set_pixel(png, x, y, RGBA(0,255,0,255));
+	    libattopng_set_pixel(png, x, y, RGBA(0,intensity2,0,255));
 	  else if (BG_COLOR == 2)
-	    libattopng_set_pixel(png, x, y, RGBA(0,0,255,255));
+	    libattopng_set_pixel(png, x, y, RGBA(0,0,intensity3,255));
 	  else if (BG_COLOR == 3)
-	    libattopng_set_pixel(png, x, y, RGBA(255,255,0,255));
+	    libattopng_set_pixel(png, x, y, RGBA(intensity1,intensity2,0,255));
 	  else if (BG_COLOR == 4)
-	    libattopng_set_pixel(png, x, y, RGBA(0,255,255,255));
+	    libattopng_set_pixel(png, x, y, RGBA(0,intensity2,intensity3,255));
 	  else if (BG_COLOR == 5)
-	    libattopng_set_pixel(png, x, y, RGBA(255,0,255,255));
+	    libattopng_set_pixel(png, x, y, RGBA(intensity1,0,intensity3,255));
 	  else
-	    libattopng_set_pixel(png, x, y, RGBA(255,255,255,255));
+	    libattopng_set_pixel(png, x, y, RGBA(intensity1,intensity2,intensity3,255));
 	}
       }
   }
@@ -134,6 +149,17 @@ void set_bounding_box(libattopng_t *png){
 void border_the_crack(libattopng_t *png){
     int x, y;
 
+    if (INVERT_COLOR)
+      {
+	FILL_COLOR1r= 0xDD;
+	FILL_COLOR1g= 0xDD;
+	FILL_COLOR1b= 0xDD;
+	FILL_COLOR2r= 0xEE;
+	FILL_COLOR2g= 0xEE;
+	FILL_COLOR2b= 0xEE;
+      }
+    
+    
     for (y = 0; y < H; y++) {
         for (x = 0; x < W; x++) {
             if (libattopng_get_pixel(png, x, y)==RGB(0,0,0))   {         
@@ -181,10 +207,16 @@ int i;
 
     if (vertcrack) {
         for (i=0; i<thickness; i++)
-            libattopng_set_pixel(png, x+i, y, RGB(0,0,0));
+	  if (INVERT_COLOR==0)
+	    libattopng_set_pixel(png, x+i, y, RGB(0,0,0));
+	  else
+	    libattopng_set_pixel(png, x+i, y, RGB(255,255,255));
     } else {
         for (i=0; i<thickness; i++)
+	  if (INVERT_COLOR==0)
             libattopng_set_pixel(png, x, y+i, RGB(0,0,0));
+	  else
+	    libattopng_set_pixel(png, x, y+i, RGB(255,255,255));
     }
 }
 
@@ -406,12 +438,12 @@ int main(int argc, char *argv[]){
 	  change_bg_color(png);
          //libattopng_set_pixel(png, 10, 10, RGBA(4,4,4,4));
 
-	sprintf(str2, "Cracks/%s/images/Crack_SL%d_BR%d_%d.png", str3, STARTS_LEFT, MAX_BRANCH, k);
+	sprintf(str2, "Cracks/%s/images/Crack_MEDTHICK_SL%d_BR%d_%d.png", str3, STARTS_LEFT, MAX_BRANCH, k);
         libattopng_save(png, str2);
 
 	{
 	  FILE* file_ptr;
-	  sprintf(str2, "Cracks/%s/labels/Crack_SL%d_BR%d_%d.txt", str3, STARTS_LEFT, MAX_BRANCH, k);
+	  sprintf(str2, "Cracks/%s/labels/Crack_MEDTHICK_SL%d_BR%d_%d.txt", str3, STARTS_LEFT, MAX_BRANCH, k);
 	  file_ptr = fopen(str2, "w");
 
 	  sprintf(str2, "0 %f %f %f %f\n", ((minx+maxx)/2)/W, ((miny+maxy)/2)/H, (maxx-minx)/W, (maxy-miny)/H);
